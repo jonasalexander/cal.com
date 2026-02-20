@@ -242,3 +242,49 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cloud-specific instructions
+
+### Services overview
+
+| Service | Purpose | Start command |
+|---------|---------|---------------|
+| PostgreSQL | Main database | `docker compose -f packages/prisma/docker-compose.yml up -d` |
+| Next.js web app | Main Cal.com app | `yarn dev` (port 3000) |
+
+### Starting the development environment
+
+1. **Docker must be running** before starting the database. The VM has Docker pre-installed with `fuse-overlayfs` storage driver and `iptables-legacy`.
+2. Start PostgreSQL: `docker compose -f packages/prisma/docker-compose.yml up -d` — runs on port 5450.
+3. The `calendso` database must exist: `docker exec prisma-postgres-1 psql -U postgres -c "CREATE DATABASE calendso;" 2>/dev/null || true`
+4. Run migrations: `yarn workspace @calcom/prisma db-migrate`
+5. Seed (only needed on first setup): `yarn db-seed`
+6. Start the web app: `yarn dev` — available at http://localhost:3000
+
+### Environment files
+
+- `.env` is copied from `.env.example` with `NEXTAUTH_SECRET` and `CALENDSO_ENCRYPTION_KEY` generated via `openssl rand -base64 32` and `openssl rand -base64 24` respectively.
+- `.env.appStore` is copied from `.env.appStore.example`.
+
+### Test credentials (from seed)
+
+| Email | Password | Role |
+|-------|----------|------|
+| `pro@example.com` | `pro` | Pro user |
+| `free@example.com` | `free` | Free user |
+| `admin@example.com` | `ADMINadmin2022!` | Admin |
+
+### Key commands
+
+See [agents/commands.md](agents/commands.md) for full reference. Quick reference:
+- Lint: `yarn biome check --write .`
+- Unit tests: `TZ=UTC yarn test`
+- Type check: `yarn type-check:ci --force`
+- Dev server: `yarn dev`
+
+### Gotchas
+
+- The Prisma docker-compose creates a `cal-saml` DB by default but **not** the `calendso` DB needed by `DATABASE_URL`. You must create it manually (step 3 above).
+- First page load after `yarn dev` takes ~10-15 seconds (Turbopack compilation). Subsequent navigations are fast.
+- Biome will report many pre-existing warnings/errors in the codebase. This is normal.
+- Unit tests have 2 pre-existing failures in `RerouteDialog.test.tsx` due to hardcoded URL expectations (`cal.com` vs `localhost:3000`). These are not caused by your changes.
