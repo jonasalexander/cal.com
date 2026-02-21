@@ -1,4 +1,3 @@
-import process from "node:process";
 import type { AppMeta } from "@calcom/types/App";
 
 export const metadata = {
@@ -24,7 +23,7 @@ export const metadata = {
       label: "Cal Video",
     },
   },
-  key: { apikey: process.env.DAILY_API_KEY },
+  key: { apikey: process.env["DAILY_API_KEY"] },
   dirName: "dailyvideo",
   isOAuth: false,
 } as AppMeta;
