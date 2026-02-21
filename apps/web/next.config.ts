@@ -233,6 +233,17 @@ const nextConfig = (phase: string): NextConfig => {
       "@boxyhq/saml-jackson",
       "jose",
     ],
+    webpack: (config, { isServer }) => {
+      if (!isServer) {
+        // Resolve node: protocol imports (e.g. `import process from "node:process"`)
+        // to the browser-compatible global process object for client-side bundles.
+        config.resolve.alias = {
+          ...config.resolve.alias,
+          "node:process": require.resolve("process/browser"),
+        };
+      }
+      return config;
+    },
     experimental: {
       optimizePackageImports: ["@calcom/ui"],
     },
