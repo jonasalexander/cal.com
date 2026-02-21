@@ -242,3 +242,68 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cloud-specific instructions
+
+### Services overview
+
+| Service | How to start | Port |
+|---|---|---|
+| PostgreSQL | `docker compose -f packages/prisma/docker-compose.yml up -d` | 5450 |
+| Web app (Next.js) | `cd apps/web && npx next dev --webpack` | 3000 |
+
+### Starting the dev server
+
+The default `yarn dev` uses Turbopack (`next dev --turbopack`). In the cloud VM, **Google Fonts are unreachable** due to network restrictions, which causes Turbopack to crash with a hard 500 error on every page. Use webpack mode instead:
+
+```bash
+cd apps/web && npx next dev --webpack
+```
+
+Webpack gracefully handles the font download failure; the app renders correctly with fallback fonts.
+
+### Database
+
+PostgreSQL runs via Docker Compose on port 5450. Start it before the dev server:
+
+```bash
+docker compose -f packages/prisma/docker-compose.yml up -d
+```
+
+The `calendso` database must exist. Create it once with:
+
+```bash
+docker exec prisma-postgres-1 psql -U postgres -c "CREATE DATABASE calendso;"
+```
+
+Then run migrations and generate Prisma types:
+
+```bash
+yarn prisma migrate deploy
+yarn prisma generate
+```
+
+### Seeded test accounts
+
+After `yarn db-seed`, these accounts are available (email / password):
+
+- `pro@example.com` / `pro` — Pro user with event types, teams, etc.
+- `free@example.com` / `free` — Free tier user
+- `admin@example.com` / `ADMINadmin2022!` — Admin user
+
+### Commands reference
+
+See [agents/commands.md](agents/commands.md) for full details. Key commands:
+
+- **Lint**: `yarn biome check --write .`
+- **Unit tests**: `TZ=UTC yarn test`
+- **Type check**: `yarn type-check:ci --force`
+
+### Docker daemon
+
+Docker must be running before starting PostgreSQL. If `docker info` fails, start the daemon:
+
+```bash
+sudo dockerd &>/tmp/dockerd.log &
+sudo chmod 666 /var/run/docker.sock
+```
