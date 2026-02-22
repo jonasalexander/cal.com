@@ -242,3 +242,46 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cloud-specific instructions
+
+### Services
+
+| Service | How to start | Port | Notes |
+|---------|-------------|------|-------|
+| PostgreSQL | `sudo docker compose -f packages/prisma/docker-compose.yml up -d` | 5450 | Required. Must create `calendso` DB: `sudo docker exec prisma-postgres-1 psql -U postgres -c "CREATE DATABASE calendso;"` |
+| Web App | `NODE_TLS_REJECT_UNAUTHORIZED=0 yarn dev` | 3000 | Main app. See font workaround below. |
+
+### Google Fonts workaround
+
+The cloud VM blocks `fonts.gstatic.com`, causing Turbopack to 500 when `next/font/google` tries to download Inter. The repo includes local Inter woff2 files in `apps/web/fonts/` and `layout.tsx` uses `next/font/local` instead. If this change is reverted upstream, the font proxy setup is needed:
+
+1. Set up `/etc/hosts` entry: `127.0.0.1 fonts.gstatic.com`
+2. Run a local HTTPS server on port 443 serving any woff2 file from `@fontsource/inter`
+3. Install the self-signed cert into the system CA store
+4. Start the dev server with `NODE_TLS_REJECT_UNAUTHORIZED=0` and `NEXT_TURBOPACK_EXPERIMENTAL_USE_SYSTEM_TLS_CERTS=1`
+
+### Database setup
+
+After starting PostgreSQL, run migrations and seed:
+```bash
+yarn prisma migrate deploy
+yarn prisma generate
+yarn db-seed
+```
+
+### Seed credentials
+
+| Email | Password | Notes |
+|-------|----------|-------|
+| `pro@example.com` | `pro` | Pro user with event types and bookings |
+| `free@example.com` | `free` | Free user |
+| `onboarding@example.com` | `onboarding` | User that hasn't completed onboarding |
+
+### Commands reference
+
+See [agents/commands.md](agents/commands.md) for the full list. Key ones:
+- Lint: `yarn biome check --write .`
+- Unit tests: `TZ=UTC yarn test`
+- Type check: `yarn type-check:ci --force`
+- Dev server: `yarn dev` (runs on port 3000)
