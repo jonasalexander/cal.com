@@ -3,7 +3,6 @@ import { loadTranslations } from "@calcom/lib/server/i18n";
 import { IconSprites } from "@calcom/ui/components/icon";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { dir } from "i18next";
-import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import { cookies, headers } from "next/headers";
 import Script from "next/script";
@@ -14,7 +13,17 @@ import { AppRouterI18nProvider } from "./AppRouterI18nProvider";
 import { Providers } from "./providers";
 import { SpeculationRules } from "./SpeculationRules";
 
-const interFont = Inter({ subsets: ["latin"], variable: "--font-sans", preload: true, display: "swap" });
+const interFont = localFont({
+  src: [
+    { path: "../fonts/Inter-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/Inter-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/Inter-SemiBold.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/Inter-Bold.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-sans",
+  preload: true,
+  display: "swap",
+});
 const calFont = localFont({
   src: "../fonts/CalSans-SemiBold.woff2",
   variable: "--font-cal",
