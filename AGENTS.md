@@ -242,3 +242,41 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cursor Cloud specific instructions
+
+### Services
+
+| Service | How to start | Port | Notes |
+|---------|-------------|------|-------|
+| PostgreSQL | `docker compose up -d` in `packages/prisma/` | 5450 | Required. Uses Docker. The cloud VM needs Docker installed with `fuse-overlayfs` storage driver and `iptables-legacy`. |
+| Web app | `yarn dev` (from repo root) | 3000 | Main Next.js app. Redirects to `/auth/login` when not authenticated. |
+
+### Prerequisites before starting the dev server
+
+1. Docker must be running: `sudo dockerd &` then `sudo chmod 666 /var/run/docker.sock`
+2. PostgreSQL must be up: `cd packages/prisma && docker compose up -d`
+3. `.env` and `.env.appStore` must exist (copy from `.env.example` / `.env.appStore.example`). At minimum, set `NEXTAUTH_SECRET` and `CALENDSO_ENCRYPTION_KEY` (generate with `openssl rand -base64 32` and `openssl rand -base64 24` respectively).
+4. Prisma client must be generated: `yarn prisma generate`
+5. Database must be migrated and seeded: `yarn db-deploy && yarn db-seed`
+
+### Seeded test user
+
+- Email: `pro@example.com`, Password: `pro` (has pre-configured event types and bookings)
+
+### Key commands
+
+See `agents/commands.md` for the full reference. Quick summary:
+- **Dev server**: `yarn dev` (port 3000)
+- **Lint**: `yarn biome check --write .`
+- **Unit tests**: `TZ=UTC yarn test`
+- **Type check**: `yarn type-check:ci --force`
+- **Prisma regenerate**: `yarn prisma generate` (run after schema changes)
+
+### Gotchas
+
+- The database runs on port **5450** (not the default 5432) to avoid collisions.
+- The `.env.example` configures `EMAIL_SERVER_HOST=localhost` on port 1025 (MailHog). Emails won't send without MailHog, but this doesn't block core functionality.
+- Some pre-existing Biome lint warnings exist in the codebase; these are not caused by your changes.
+- Two pre-existing test failures in `RerouteDialog.test.tsx` expect `https://cal.com` URLs but get `http://localhost:3000` in local dev — this is expected and not caused by your changes.
+- After modifying the Prisma schema, always run `yarn prisma generate` before `yarn type-check:ci --force`.
