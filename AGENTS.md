@@ -242,3 +242,52 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cursor Cloud specific instructions
+
+### Starting the dev server
+
+The Cursor Cloud VM blocks `fonts.gstatic.com`, which breaks Turbopack's Google Font resolution in `app/layout.tsx`. Start the web app with the `--webpack` flag instead of the default `--turbopack`:
+
+```bash
+cd apps/web && DATABASE_URL="postgresql://postgres:@localhost:5450/calendso" \
+  DATABASE_DIRECT_URL="postgresql://postgres:@localhost:5450/calendso" \
+  ../../node_modules/.bin/next dev --webpack --port 3000
+```
+
+The `--webpack` flag is needed because Next.js 16 defaults to Turbopack (configured in `next.config.ts` via `turbopack: {}`), and the `node:process` import fix (committed to the branch) resolves webpack-specific build errors in app-store metadata files.
+
+### Database
+
+PostgreSQL runs in Docker via `packages/prisma/docker-compose.yml` on **port 5450** (not the default 5432). Start it with:
+
+```bash
+sudo docker compose -f packages/prisma/docker-compose.yml up -d
+```
+
+The `DATABASE_URL` must be explicitly passed when starting the dev server (the `.env` in the repo root is loaded via `dotenvConfig({ path: "../../.env" })` in `next.config.ts`, but webpack's module compilation may not pick it up in time).
+
+### Seeded test accounts
+
+The database seed (`yarn db-seed`) creates test users. For local testing:
+
+| User | Email | Password |
+|------|-------|----------|
+| Free | free@example.com | free |
+
+### Running the `db-seed` via turbo
+
+`yarn db-seed` (which uses turbo) may fail with `ECONNREFUSED` due to concurrent task execution. If this happens, run the seed directly:
+
+```bash
+cd packages/prisma && DATABASE_URL="postgresql://postgres:@localhost:5450/calendso" \
+  npx ts-node --transpile-only ../../scripts/seed.ts
+```
+
+### Key commands reference
+
+See `agents/commands.md` for the full list. Quick reference:
+
+- **Lint**: `yarn biome check --write .`
+- **Unit tests**: `TZ=UTC yarn vitest run <file>`
+- **Type check**: `yarn type-check:ci --force`
