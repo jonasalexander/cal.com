@@ -242,3 +242,27 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cursor Cloud specific instructions
+
+### Services
+
+| Service | How to start | Port |
+|---|---|---|
+| PostgreSQL | `sudo docker compose up -d` in `packages/prisma/` | 5450 |
+| Cal.com Web App | `yarn dev` (from repo root) | 3000 |
+
+### Starting the dev environment
+
+1. **Start PostgreSQL**: `cd packages/prisma && sudo docker compose up -d && cd ../..`
+2. **Run migrations** (if schema changed): `yarn prisma migrate deploy && yarn prisma generate`
+3. **Start web app**: `yarn dev` — runs Next.js with Turbopack on port 3000
+
+### Gotchas
+
+- The database runs on **port 5450** (not the default 5432) to avoid collisions. The `DATABASE_URL` in `.env.example` already uses this port.
+- `yarn dx` is a convenience command that starts Postgres, runs migrations, seeds, and starts the dev server all at once. However, in Cloud Agent environments Docker must be started separately first, so prefer the manual steps above.
+- After schema changes to `packages/prisma/schema.prisma`, run `yarn prisma generate` to regenerate the Prisma client, Zod types, and Kysely types.
+- The seeded test user for local dev is `pro@example.com` / `pro`. An admin user is `admin@example.com` / `ADMINadmin2022!`.
+- Hot reload with Turbopack works well, but **newly installed dependencies** may require restarting the dev server.
+- See [agents/commands.md](agents/commands.md) for the full command reference (lint, test, type-check, etc.).
