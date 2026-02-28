@@ -242,3 +242,26 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cursor Cloud specific instructions
+
+### Environment gotchas
+
+- **System `DATABASE_URL` override**: The cloud VM sets `DATABASE_URL=postgresql://prisma:prisma@localhost:5432/local` at the system level. This overrides the `.env` file value since `dotenv` does not overwrite existing env vars. You **must** export `DATABASE_URL="postgresql://postgres:@localhost:5450/calendso"` and `DATABASE_DIRECT_URL="postgresql://postgres:@localhost:5450/calendso"` before running the dev server or any Prisma command.
+- **Google Fonts blocked**: `fonts.gstatic.com` and `fonts.googleapis.com` are unreachable due to network egress restrictions. The `next/font/google` Inter font in `app/layout.tsx` and `components/PageWrapper.tsx` will fail to download. To work around this, add `/etc/hosts` entries pointing these domains to `127.0.0.1`, start a local HTTPS server serving any valid woff2 file at port 443 with a self-signed cert, and set `NODE_TLS_REJECT_UNAUTHORIZED=0`. Font rendering degrades gracefully (system font fallback).
+- **Node version**: Use Node 20 via nvm (`nvm use 20`). The system default may be Node 22 which is not the project's target.
+
+### Running services
+
+- **PostgreSQL** (required): Start via `sudo docker compose up -d` in `packages/prisma/`. Runs on port 5450. Create the `calendso` database if needed: `psql -h localhost -p 5450 -U postgres -c "CREATE DATABASE calendso;"`.
+- **Web app**: Run `yarn dev` from repo root (uses turbo) or `npx next dev -p 3000` from `apps/web/`. Remember to export `DATABASE_URL` and `DATABASE_DIRECT_URL` first.
+- **Database migrations**: `yarn workspace @calcom/prisma db-deploy`
+- **Database seed**: `yarn db-seed` (creates test users — see `README.md` for credentials)
+- **Docker daemon**: Must be started with `sudo dockerd &` before any docker-compose commands.
+
+### Standard commands
+
+See [agents/commands.md](agents/commands.md) for lint, test, type-check, and build commands. Key ones:
+- Lint: `yarn biome check .` (pre-existing warnings expected in the codebase)
+- Unit tests: `TZ=UTC yarn test`
+- Type check: `yarn type-check:ci --force`
