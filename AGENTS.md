@@ -242,3 +242,37 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cursor Cloud specific instructions
+
+### Services overview
+
+| Service | How to start | Port |
+|---|---|---|
+| Cal.com web app (Next.js) | `yarn dev` | 3000 |
+| PostgreSQL | `sudo docker compose up -d` in `packages/prisma/` | 5450 |
+
+### Starting the dev environment
+
+1. **PostgreSQL must be running** before starting the web app. Start it with `sudo docker compose up -d` in `packages/prisma/`. The `calendso` database must exist (`sudo docker exec prisma-postgres-1 psql -U postgres -c "CREATE DATABASE calendso;" 2>/dev/null || true`).
+2. Run `yarn prisma generate` if Prisma types are stale (e.g., after schema changes).
+3. Run `yarn db-deploy` to apply migrations, then `yarn db-seed` to seed test data.
+4. Start the dev server with `NODE_OPTIONS="--max-old-space-size=8192" yarn dev` (port 3000).
+
+### Seeded test users
+
+| Email | Password |
+|---|---|
+| `pro@example.com` | `pro` |
+| `free@example.com` | `free` |
+| `admin@example.com` | `ADMINadmin2022!` |
+
+### Key caveats
+
+- Node.js 20 is required (the Dockerfile uses Node 20; nvm is available in the environment).
+- Yarn 4.12.0 is the package manager (bundled via `.yarn/releases/`). Enable with `corepack enable`.
+- Docker is required for PostgreSQL. The dev compose file is at `packages/prisma/docker-compose.yml` and maps Postgres to port **5450** (not the default 5432).
+- The `.env` file must have `NEXTAUTH_SECRET` and `CALENDSO_ENCRYPTION_KEY` generated (use `openssl rand -base64 32` and `openssl rand -base64 24` respectively).
+- `yarn postinstall` runs `husky install` and Prisma generation automatically.
+- Unit tests: `TZ=UTC yarn test`. Two pre-existing test failures exist in `RerouteDialog.test.tsx` due to URL mismatch (expects `https://cal.com` but env uses `http://localhost:3000`); these are not caused by local setup.
+- Lint/format: `yarn biome check --write .` — see `agents/commands.md` for full command reference.
