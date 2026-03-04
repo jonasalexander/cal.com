@@ -242,3 +242,32 @@ For detailed information, see the `agents/` directory:
 - **[agents/rules/](agents/rules/)** - Modular engineering rules
 - **[agents/commands.md](agents/commands.md)** - Complete command reference
 - **[agents/knowledge-base.md](agents/knowledge-base.md)** - Domain knowledge and business rules
+
+## Cursor Cloud specific instructions
+
+### Prerequisites
+
+Docker must be running for PostgreSQL. Start it with `sudo dockerd &>/tmp/dockerd.log &` if not already running.
+
+### Starting services
+
+1. **PostgreSQL** (port 5450): `sudo docker compose -f packages/prisma/docker-compose.yml up -d`
+   - Create the `calendso` database if first run: `sudo docker exec prisma-postgres-1 psql -U postgres -c "CREATE DATABASE calendso;"`
+2. **Prisma generate + migrations**: `yarn prisma generate && yarn workspace @calcom/prisma db-deploy`
+3. **Seed** (first run only): `yarn db-seed`
+4. **Dev server** (port 3000): `yarn dev` — runs Next.js with Turbopack via Turborepo
+
+### Key commands
+
+See [agents/commands.md](agents/commands.md) for the full reference. Quick summary:
+
+- Lint: `yarn biome check --write .`
+- Unit tests: `TZ=UTC yarn test` (Vitest)
+- Type check: `yarn type-check:ci --force`
+
+### Gotchas
+
+- The `yarn dev` command runs `turbo run dev --filter="@calcom/web"` which first copies app-store static files, then starts `next dev --turbopack`. If port 3000 is already in use, the Next.js process will exit silently — check with `fuser 3000/tcp` or `netstat -tlnp | grep 3000`.
+- Env files must exist before `yarn dev`: `.env` (from `.env.example`) and `.env.appStore` (from `.env.appStore.example`). Both `NEXTAUTH_SECRET` and `CALENDSO_ENCRYPTION_KEY` must be non-empty.
+- The PostgreSQL docker-compose in `packages/prisma/docker-compose.yml` uses port 5450 (not default 5432) to avoid collisions.
+- Seeded test users: `pro@example.com` / `pro`, `free@example.com` / `free`, `admin@example.com` / `ADMINadmin2022!`.
